@@ -19,7 +19,7 @@ def vehicle_class_ids(names) -> list[int]:
 
 
 class Detector:
-    def __init__(self, model, classes, conf, device, imgsz=1280):
+    def __init__(self, model, classes, conf, device, imgsz=None):
         with redirect_stdout(sys.stderr):
             from ultralytics import YOLO
             self.model = YOLO(model)
@@ -27,9 +27,11 @@ class Detector:
         self.conf, self.device, self.imgsz = conf, device, imgsz
 
     def boxes(self, frame) -> np.ndarray:
+        # portrait frames shrink more inside YOLO's square letterbox; 1920 keeps small cars visible
+        imgsz = self.imgsz or (1920 if frame.shape[0] > frame.shape[1] else 1280)
         with redirect_stdout(sys.stderr):
             result = self.model.predict(frame, classes=self.classes, conf=self.conf,
-                                        device=self.device, imgsz=self.imgsz, verbose=False)[0]
+                                        device=self.device, imgsz=imgsz, verbose=False)[0]
         # OBB models (yolo11*-obb, DOTA aerial) put results in .obb; axis-aligned in .boxes
         det = result.obb if getattr(result, "obb", None) is not None else result.boxes
         return det.xyxy.cpu().numpy().astype(float).reshape(-1, 4)

@@ -58,7 +58,11 @@ Use the exact `--width` you will pass to `run`. Polygon coords are in pixels of 
 
 ### Step 2. Get the slot map
 
-**2a. Auto-detect from painted lines** (top-down / satellite views)
+The slot map defines capacity. A hand-traced map is exact; the auto-detector below is a
+bootstrap that still needs review. `config/examples/` holds traced maps for the sample
+photos (from the `codex-run-1` branch) with a `manifest.json` of expected occupancy.
+
+**2a. Auto-detect from painted lines** (top-down / satellite views, bootstrap only)
 ```bash
 python -m parking_vision.tools.detect_slots data/ref.jpg config/slots.json --width 1280 --preview out/slots.png
 ```
@@ -72,14 +76,19 @@ One divider orientation per run (auto = best of dominant angle and its perpendic
 Lots with rows at two orientations: run twice with `--angle 0` and `--angle 90`
 (or whatever the preview reports) and concatenate the two JSON lists.
 
-Results on the satellite samples in `Example photos/` (see `output/auto/*.png`):
+Auto-detected grids vs the traced maps in `config/examples/` (previews in `output/auto/`):
 
-| photo | slots found | visible stalls | notes |
-|---|---|---|---|
-| nigh1 | 242 | ~215 | +28 false slots on a hatched strip, a few end overshoots |
-| nigh2 | 239 | ~230 | all 5 double rows |
-| park1 | 63 | ~60 | full lot, lines mostly hidden under cars |
-| park2 | 20 | ~45 | mixed orientations; needs the two-angle run |
+| photo | traced bays | auto slots | traced bays hit by an auto slot | auto slots inside a traced bay |
+|---|---|---|---|---|
+| nigh1 | 191 | 242 | 93% | 71% |
+| nigh2 | 209 | 239 | 93% | 81% |
+| park1 | 54 | 63 | 100% | 86% |
+| park2 | 37 | 20 | 41% | 70% |
+| sparse | 155 | 131 | 83% | 98% |
+
+Auto misses: rows at a second orientation (park2), slot depth/extent drift from partial
+line segments, back-to-back splits off the true spine, end-of-row overshoot, and false
+rows on hatched strips. Fix by editing the JSON, or trace the lot by hand.
 
 **2b. Click by hand** (any view, or to fix 2a)
 ```bash
@@ -194,7 +203,7 @@ parking-lot-vision/
 | `--slots` | `config/slots.json` | polygon file |
 | `--model` | `yolo11s-obb.pt` | any Ultralytics detect or OBB weights (`yolo11s.pt` for ground cameras) |
 | `--classes` | inferred | vehicle class IDs; COCO `2 3 5 7`, DOTA `9 10` |
-| `--imgsz` | `1280` | YOLO inference resolution; 2048 for very small cars |
+| `--imgsz` | auto | YOLO inference resolution: 1920 portrait, 1280 landscape (portrait frames shrink more in the square letterbox) |
 | `--conf` | `0.25` | detection threshold |
 | `--width` | `1280` | resize width before inference; must match annotation frame |
 | `--vote` | `5` | frames in majority-vote buffer (1 = off) |

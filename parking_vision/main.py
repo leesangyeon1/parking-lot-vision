@@ -18,7 +18,8 @@ def main(argv=None):
                         help="yolo11s-obb.pt (DOTA aerial, top-down cameras) or yolo11s.pt (COCO, ground cameras)")
     parser.add_argument("--classes", nargs="+", type=int, default=None,
                         help="Vehicle class IDs; default inferred from model names")
-    parser.add_argument("--imgsz", type=int, default=1280, help="YOLO inference resolution")
+    parser.add_argument("--imgsz", type=int, default=None,
+                        help="YOLO inference resolution (default: 1920 portrait, 1280 landscape)")
     parser.add_argument("--conf", type=float, default=0.25)
     parser.add_argument("--width", type=int, default=1280)
     parser.add_argument("--vote", type=int, default=5)
@@ -28,7 +29,7 @@ def main(argv=None):
     parser.add_argument("--json-out")
     parser.add_argument("--device", default=None)
     args = parser.parse_args(argv)
-    if min(args.width, args.imgsz, args.vote, args.every) < 1 or not 0 <= args.conf <= 1:
+    if min(args.width, args.imgsz or 1, args.vote, args.every) < 1 or not 0 <= args.conf <= 1:
         parser.error("width, imgsz, vote, every must be positive; conf must be between 0 and 1")
     slots, vote = load_slots(args.slots), VoteBuffer(args.vote)
     cap = cv2.VideoCapture(int(args.source) if args.source.isdigit() else args.source)
