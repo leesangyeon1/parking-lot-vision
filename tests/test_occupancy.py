@@ -251,3 +251,61 @@ def test_cli_invalid_arguments(flag, value):
     with pytest.raises(SystemExit) as error:
         main(["unused.mp4", flag, value])
     assert error.value.code == 2
+
+
+def test_vehicle_class_ids():
+    from parking_vision.occupancy import vehicle_class_ids
+
+    assert vehicle_class_ids({0: "plane", 1: "small vehicle", 2: "large-vehicle", 3: "ship"}) == [1, 2]
+    assert vehicle_class_ids({0: "person", 2: "car", 3: "motorcycle", 5: "bus", 7: "truck"}) == [2, 3, 5, 7]
+    with pytest.raises(ValueError):
+        vehicle_class_ids({0: "plane", 1: "ship"})
+
+
+def test_detector_uses_obb_and_infers_classes(monkeypatch):
+    import types
+    from parking_vision.occupancy import Detector
+
+    calls = {}
+    xyxy = SimpleNamespace(cpu=lambda: SimpleNamespace(numpy=lambda: np.array([[1, 2, 3, 4]])))
+
+    class Fake:
+        names = {0: "plane", 1: "small vehicle", 2: "large vehicle"}
+
+        def predict(self, frame, **kwargs):
+            calls.update(kwargs)
+            return [SimpleNamespace(obb=SimpleNamespace(xyxy=xyxy), boxes=None)]
+
+    monkeypatch.setitem(sys.modules, "ultralytics", types.SimpleNamespace(YOLO=lambda path: Fake()))
+    detector = Detector("fake-obb.pt", None, 0.3, "cpu", 1280)
+    np.testing.assert_array_equal(detector.boxes(np.zeros((8, 8, 3), np.uint8)), [[1.0, 2.0, 3.0, 4.0]])
+    assert calls["classes"] == [1, 2] and calls["imgsz"] == 1280 and calls["conf"] == 0.3
+
+
+def test_detect_slots_on_synthetic_lot():
+    from parking_vision.tools import detect_slots as ds
+
+    assert ds.estimate_pitch([40, 41, 80, 39, 120]) == pytest.approx(40, abs=1)   # hidden lines = 2x, 3x gaps
+    assert ds.cluster_1d([10, 11, 12, 30, 31], 3) == [11, 30.5]
+    assert ds.fill_row([100, 140, 220], 40) == [100, 140, 180, 220]                # interpolates missing 180
+    assert ds.fill_row([100, 140], 40, extra_points=[200]) == [100, 140, 180, 220]  # extends for a car at 200
+    # synthetic top-down lot: two rows of 6 stalls (pitch 40, depth 90) sharing a spine at x=300
+    frame = np.full((400, 600, 3), 60, np.uint8)
+    for y in range(60, 60 + 7 * 40, 40):
+        cv2.line(frame, (210, y), (390, y), (255, 255, 255), 2)
+    cv2.line(frame, (300, 60), (300, 300), (255, 255, 255), 2)
+    slots, angle = ds.detect_slots(frame, min_len=25, model=None)
+    assert abs(angle) < 1 and len(slots) == 12
+    centroids = sorted((np.mean([p[0] for p in s["points"]]), np.mean([p[1] for p in s["points"]])) for s in slots)
+    assert all(abs(cx - 255) < 8 for cx, _ in centroids[:6]) and all(abs(cx - 345) < 8 for cx, _ in centroids[6:])
+    assert sorted(round(cy) for _, cy in centroids[:6]) == pytest.approx([80, 120, 160, 200, 240, 280], abs=3)
+
+
+def test_fit_trims_long_lists_and_terminates():
+    from parking_vision.annotate import _fit
+
+    text = "Empty slots: " + ", ".join(map(str, range(300)))
+    out = _fit(text, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 300)
+    assert out.startswith("Empty slots: 0, 1") and out.endswith(", ...")
+    assert cv2.getTextSize(out, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1)[0][0] <= 300
+    assert _fit("Empty slots: 1, 2", cv2.FONT_HERSHEY_SIMPLEX, 0.6, 1000) == "Empty slots: 1, 2"

@@ -56,7 +56,32 @@ python -m parking_vision.tools.extract_frame data/lot.mp4 data/ref.jpg --width 1
 ```
 Use the exact `--width` you will pass to `run`. Polygon coords are in pixels of this frame.
 
-### Step 2. Annotate slots (index = click order)
+### Step 2. Get the slot map
+
+**2a. Auto-detect from painted lines** (top-down / satellite views)
+```bash
+python -m parking_vision.tools.detect_slots data/ref.jpg config/slots.json --width 1280 --preview out/slots.png
+```
+Finds the dominant stall-line angle, groups lines into rows, estimates the stall pitch per
+row (tolerating lines hidden under cars), fills the full grid and extends rows to cover
+detected vehicles. Open the preview, then delete false rows (hatched areas, crosswalks)
+or reorder entries in the JSON. `--min-len` = shortest line to accept (px); `--model ''`
+skips the vehicle-based row extension and the car-edge filtering.
+
+One divider orientation per run (auto = best of dominant angle and its perpendicular).
+Lots with rows at two orientations: run twice with `--angle 0` and `--angle 90`
+(or whatever the preview reports) and concatenate the two JSON lists.
+
+Results on the satellite samples in `Example photos/` (see `output/auto/*.png`):
+
+| photo | slots found | visible stalls | notes |
+|---|---|---|---|
+| nigh1 | 242 | ~215 | +28 false slots on a hatched strip, a few end overshoots |
+| nigh2 | 239 | ~230 | all 5 double rows |
+| park1 | 63 | ~60 | full lot, lines mostly hidden under cars |
+| park2 | 20 | ~45 | mixed orientations; needs the two-angle run |
+
+**2b. Click by hand** (any view, or to fix 2a)
 ```bash
 python -m parking_vision.tools.pick_slots          # opens Ultralytics ParkingPtsSelection
 ```
@@ -77,9 +102,19 @@ own annotations before monitoring a real lot. Polygons may contain three or more
 ### Step 3. Run
 ```bash
 python -m parking_vision.main data/lot.mp4 --slots config/slots.json \
-    --model yolo11s.pt --width 1280 --vote 5 --show --json-out out/state.jsonl --save out/lot.mp4
+    --model yolo11s-obb.pt --width 1280 --vote 5 --show --json-out out/state.jsonl --save out/lot.mp4
 ```
-Source may be a file path, RTSP URL, or webcam index (`0`).
+**Pick the model by camera viewpoint.** `yolo11s-obb.pt` (DOTA aerial, classes
+`small vehicle`/`large vehicle`) for top-down / drone / satellite views. `yolo11s.pt`
+(COCO) for ground-level or oblique CCTV. COCO models see ~0 cars from straight above.
+Vehicle class IDs are inferred from the model's class names; override with `--classes`.
+Source may be a file path, RTSP URL, webcam index (`0`), or a single image. For an image,
+save the annotated result as an image:
+```bash
+python -m parking_vision.main data/ref.jpg --slots config/slots.json --vote 1 --save out/ref-occupancy.png
+```
+The overlay shows every slot filled green (empty) or red (occupied) with its index, and a
+header with `Total | Empty | Occupied` counts plus the empty and occupied index lists.
 Frame indices start at zero; `--every 3` reports frames 0, 3, 6, and so on.
 Output directories are created automatically. JSONL files are appended to; MP4 files
 are overwritten. Saved video uses the source FPS (25 if unavailable), so frame
@@ -133,6 +168,7 @@ parking-lot-vision/
 │   ├── main.py                # CLI: source loop, wiring, stdout/json/mp4 outputs
 │   └── tools/
 │       ├── extract_frame.py   # video -> ref.jpg at target width
+│       ├── detect_slots.py    # painted lines -> full slots.json grid (top-down views)
 │       └── pick_slots.py      # thin wrapper: solutions.ParkingPtsSelection()
 └── tests/
     └── test_occupancy.py      # assign() + VoteBuffer + LotState on synthetic boxes
@@ -156,8 +192,9 @@ parking-lot-vision/
 |---|---|---|
 | `source` | required | file / RTSP / webcam index |
 | `--slots` | `config/slots.json` | polygon file |
-| `--model` | `yolo11s.pt` | any Ultralytics detect weights |
-| `--classes` | `2 3 5 7` | COCO car, motorcycle, bus, truck |
+| `--model` | `yolo11s-obb.pt` | any Ultralytics detect or OBB weights (`yolo11s.pt` for ground cameras) |
+| `--classes` | inferred | vehicle class IDs; COCO `2 3 5 7`, DOTA `9 10` |
+| `--imgsz` | `1280` | YOLO inference resolution; 2048 for very small cars |
 | `--conf` | `0.25` | detection threshold |
 | `--width` | `1280` | resize width before inference; must match annotation frame |
 | `--vote` | `5` | frames in majority-vote buffer (1 = off) |
@@ -173,7 +210,12 @@ parking-lot-vision/
 - **Slot flickers** → raise `--vote`.
 - **Truck spans two slots** → box-center rule marks only one. Switch to IoU rule
   (`--rule iou --iou-thresh 0.3`) in Phase 2.
-- **Missed cars from steep angle** → lower `--conf` first, then Phase 2 fine-tune.
+- **Zero detections** → wrong model for the viewpoint. Top-down → `yolo11s-obb.pt`,
+  ground camera → `yolo11s.pt`. Then lower `--conf`, raise `--imgsz`, then Phase 2 fine-tune.
+- **Total is too small** → `total` = number of polygons in `slots.json`. Run
+  `detect_slots` (Step 2a) or annotate every bay, not a sample.
+- **detect_slots misses a row** → lines too faint or short: lower `--min-len`, or check the
+  row has at least 3 visible lines. **Extra rows** in hatched zones → delete from JSON.
 - **Slow on CPU** → `--model yolo11n.pt --every 3 --width 960`.
 
 ## 6. Testing

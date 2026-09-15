@@ -7,18 +7,32 @@ import cv2
 import numpy as np
 
 
+VEHICLE_NAMES = {"car", "motorcycle", "bus", "truck", "small vehicle", "large vehicle"}
+
+
+def vehicle_class_ids(names) -> list[int]:
+    """Vehicle class IDs for COCO (car/bus/...) or DOTA aerial (small/large vehicle) models."""
+    ids = [i for i, name in names.items() if name.replace("-", " ") in VEHICLE_NAMES]
+    if not ids:
+        raise ValueError(f"No vehicle classes in model; pass --classes. Model names: {list(names.values())}")
+    return ids
+
+
 class Detector:
-    def __init__(self, model, classes, conf, device):
+    def __init__(self, model, classes, conf, device, imgsz=1280):
         with redirect_stdout(sys.stderr):
             from ultralytics import YOLO
             self.model = YOLO(model)
-        self.classes, self.conf, self.device = classes, conf, device
+        self.classes = classes or vehicle_class_ids(self.model.names)
+        self.conf, self.device, self.imgsz = conf, device, imgsz
 
     def boxes(self, frame) -> np.ndarray:
         with redirect_stdout(sys.stderr):
             result = self.model.predict(frame, classes=self.classes, conf=self.conf,
-                                        device=self.device, verbose=False)[0]
-        return result.boxes.xyxy.cpu().numpy().astype(float).reshape(-1, 4)
+                                        device=self.device, imgsz=self.imgsz, verbose=False)[0]
+        # OBB models (yolo11*-obb, DOTA aerial) put results in .obb; axis-aligned in .boxes
+        det = result.obb if getattr(result, "obb", None) is not None else result.boxes
+        return det.xyxy.cpu().numpy().astype(float).reshape(-1, 4)
 
 
 def assign(boxes, slots) -> list[bool]:
