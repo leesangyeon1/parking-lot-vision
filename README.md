@@ -31,6 +31,17 @@ detected vehicle's bounding-box center lies inside the slot polygon. Otherwise *
 A per-slot majority vote over the last `--vote` frames removes flicker.
 During startup, voting uses the frames available so far; ties count as empty.
 
+**The slot map defines total capacity.** YOLO finds vehicles; it does not discover
+empty bays. Annotate every visible parking bay for each camera view and supply that
+map explicitly with `--slots`. A two-polygon example cannot report a whole lot.
+
+The default is now `yolo11s-obb.pt`, an aerial vehicle detector. The original COCO
+`yolo11s.pt` missed all vehicles in the example satellite images. Both ordinary and
+oriented (rotated) detection boxes are supported; their centers use the same
+occupancy rule. Vehicle class IDs are selected from the loaded model's names, so
+COCO IDs are never silently used for DOTA aerial weights. See the
+[Ultralytics oriented-box documentation](https://docs.ultralytics.com/tasks/obb/).
+
 ## 2. Reference research → what we take
 
 | Reference | What it does | What we reuse |
@@ -77,7 +88,7 @@ own annotations before monitoring a real lot. Polygons may contain three or more
 ### Step 3. Run
 ```bash
 python -m parking_vision.main data/lot.mp4 --slots config/slots.json \
-    --model yolo11s.pt --width 1280 --vote 5 --show --json-out out/state.jsonl --save out/lot.mp4
+    --width 1280 --vote 5 --show --json-out out/state.jsonl --save out/lot.mp4
 ```
 Source may be a file path, RTSP URL, or webcam index (`0`).
 Frame indices start at zero; `--every 3` reports frames 0, 3, 6, and so on.
@@ -85,6 +96,32 @@ Output directories are created automatically. JSONL files are appended to; MP4 f
 are overwritten. Saved video uses the source FPS (25 if unavailable), so frame
 skipping produces a shorter video. Model weights download on first use if absent;
 use a local weights path for offline inference.
+
+`--width` controls the frame and polygon coordinate system. `--imgsz` controls YOLO's
+internal inference resolution. The aerial default is 1280 for landscape frames and 1920 for portrait frames, which
+otherwise shrink small cars more severely;
+lower it to 1280 or 640 for speed after checking accuracy on your view. For a
+ground-level camera, use `--model yolo11s.pt --imgsz 640` and calibrate that camera's
+slots. No model works perfectly for every viewpoint.
+
+### Run the supplied example photos
+
+Each current photo has its own manually traced visible-bay map in `config/examples/`.
+These maps include identifiable cropped bays and exclude aisles, hatch zones,
+landscaping and unresolvable tree cover; totals refer to this visible footprint.
+The example names `nigh1` and `nigh2` are filenames, not evidence of nighttime footage.
+
+```bash
+python -m parking_vision.main "Example photos/example photos/park2.png" \
+    --slots config/examples/park2.json --vote 1 --save output/images/park2-output.png
+python output/run_detection.py   # compare old/new models on all five current photos
+```
+
+`--save` accepts `.png`/`.jpg` for an annotated still (or the latest processed video
+frame). Other extensions use the video writer. Open `output/index.html` for current
+results. `config/examples/manifest.json` records source hashes, the map for each
+image and independent visual labels used only for evaluation. Replacing an image
+requires reviewing its annotations; the evaluator rejects changed source hashes.
 
 ### Step 4. Consume metrics
 One JSON object per processed frame on stdout (and `--json-out`):
@@ -121,7 +158,8 @@ parking-lot-vision/
 ├── PROMPT.md                  # implementation prompt for a coding agent
 ├── requirements.txt
 ├── config/
-│   └── slots.json             # polygons, index = list position
+│   ├── slots.json             # example only, never selected implicitly
+│   └── examples/              # complete visible-bay maps and evaluation manifest
 ├── data/                      # videos, ref frames (gitignored)
 ├── out/                       # json / mp4 outputs (gitignored)
 ├── parking_vision/
@@ -155,15 +193,16 @@ parking-lot-vision/
 | Flag | Default | Meaning |
 |---|---|---|
 | `source` | required | file / RTSP / webcam index |
-| `--slots` | `config/slots.json` | polygon file |
-| `--model` | `yolo11s.pt` | any Ultralytics detect weights |
-| `--classes` | `2 3 5 7` | COCO car, motorcycle, bus, truck |
+| `--slots` | required | complete polygon file for this view |
+| `--model` | `yolo11s-obb.pt` | aerial default; also supports ordinary detect weights |
+| `--classes` | inferred | vehicle IDs from model names; explicit IDs override |
 | `--conf` | `0.25` | detection threshold |
 | `--width` | `1280` | resize width before inference; must match annotation frame |
+| `--imgsz` | auto | 1280 landscape / 1920 portrait; explicit size overrides |
 | `--vote` | `5` | frames in majority-vote buffer (1 = off) |
 | `--every` | `1` | process every k-th frame |
 | `--show` | off | cv2 window, `q` quits |
-| `--save` | none | output mp4 path |
+| `--save` | none | output video path, or PNG/JPG snapshot |
 | `--json-out` | none | JSONL path |
 | `--device` | auto | `cpu`, `0`, `mps` |
 
@@ -174,7 +213,8 @@ parking-lot-vision/
 - **Truck spans two slots** → box-center rule marks only one. Switch to IoU rule
   (`--rule iou --iou-thresh 0.3`) in Phase 2.
 - **Missed cars from steep angle** → lower `--conf` first, then Phase 2 fine-tune.
-- **Slow on CPU** → `--model yolo11n.pt --every 3 --width 960`.
+- **Slow on CPU** → lower `--imgsz` or use `--every 3`; validate detection accuracy
+  before changing models. Changing `--width` also requires new slot coordinates.
 
 ## 6. Testing
 
@@ -185,8 +225,13 @@ pytest tests/
 `assign` marks exactly the hit slot; `VoteBuffer(3)` flips only after 2/3 agreeing
 frames; `LotState` counts and index lists are consistent (`sorted(empty + occupied) == list(range(N))`).
 Tests also check polygon ordering, overlay colors, frame extraction, frame skipping,
-JSONL append, MP4 decoding, and cleanup. They use synthetic video and a fake detector;
-no model is instantiated or downloaded, and network connections are blocked.
+JSONL append, MP4 decoding, still-image output, cleanup, automatic class mapping,
+rotated-box extraction and annotation bounds. They use synthetic data and model
+stand-ins; no real model is instantiated or downloaded, and network connections
+are blocked. The real-image evaluation is a separate command above.
+
+Dense overlays show smaller centered slot labels. The header abbreviates long empty
+lists after 12 indices; stdout and JSON files always contain every index and centroid.
 
 ## 7. Out of scope (v1)
 

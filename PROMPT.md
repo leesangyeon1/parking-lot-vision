@@ -1,5 +1,11 @@
 # Implementation prompt — parking-lot-vision
 
+> Image-validation revision: README now describes the corrected aerial defaults.
+> Use `yolo11s-obb.pt`, infer vehicle classes from model names, support `result.obb`,
+> and expose `--imgsz` (auto: 1280 landscape / 1920 portrait). Require an explicit view-specific `--slots` map.
+> The original build specification below records v1; those defaults were insufficient
+> for the supplied overhead images. Keep the box-center rule and metrics schema.
+
 Paste this into a coding agent (or follow it yourself). README.md is the spec; this prompt
 is the build order and acceptance criteria.
 

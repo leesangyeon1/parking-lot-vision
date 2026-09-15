@@ -8,17 +8,26 @@ import numpy as np
 
 
 class Detector:
-    def __init__(self, model, classes, conf, device):
+    def __init__(self, model, classes, conf, device, imgsz=None):
         with redirect_stdout(sys.stderr):
             from ultralytics import YOLO
             self.model = YOLO(model)
-        self.classes, self.conf, self.device = classes, conf, device
+        if self.model.task not in {"detect", "obb"}:
+            raise ValueError("Use a detection or oriented-box model")
+        vehicles = {"car", "motorcycle", "bus", "truck", "small vehicle", "large vehicle"}
+        self.classes = classes if classes is not None else [
+            i for i, name in self.model.names.items() if name.replace("-", " ") in vehicles]
+        if not self.classes or any(i not in self.model.names for i in self.classes):
+            raise ValueError("Specify valid vehicle class IDs with --classes for this model")
+        self.conf, self.device, self.imgsz = conf, device, imgsz
 
     def boxes(self, frame) -> np.ndarray:
+        size = self.imgsz or (1920 if frame.shape[0] > frame.shape[1] else 1280)
         with redirect_stdout(sys.stderr):
             result = self.model.predict(frame, classes=self.classes, conf=self.conf,
-                                        device=self.device, verbose=False)[0]
-        return result.boxes.xyxy.cpu().numpy().astype(float).reshape(-1, 4)
+                                        device=self.device, imgsz=size, verbose=False)[0]
+        detections = result.obb if result.obb is not None else result.boxes
+        return detections.xyxy.cpu().numpy().astype(float).reshape(-1, 4)
 
 
 def assign(boxes, slots) -> list[bool]:

@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from parking_vision.occupancy import LotState, VoteBuffer, assign
+from parking_vision.occupancy import Detector, LotState, VoteBuffer, assign
 from parking_vision.slots import load_slots
 
 
@@ -192,7 +192,7 @@ def test_overlay(slots):
     assert frame[110, 160].tolist() == [255, 0, 255]
     assert np.any(frame[10:25, 10:300] == 255)
     assert np.any(frame[35:51, 10:150] == 255)
-    assert np.any(frame[125:145, 60:75, 1] > 100)
+    assert np.any(frame[130:150, 50:70, 1] > 100)
 
 
 def test_extract_frame(video, tmp_path, capsys):
@@ -244,10 +244,109 @@ def test_cli_cleanup_and_camera_source(tmp_path, slots, monkeypatch, failure):
 
 
 @pytest.mark.parametrize("flag, value", [("--width", "0"), ("--vote", "-1"),
-                                        ("--every", "0"), ("--conf", "nan")])
+                                        ("--every", "0"), ("--imgsz", "0"), ("--conf", "nan")])
 def test_cli_invalid_arguments(flag, value):
     from parking_vision.main import main
 
     with pytest.raises(SystemExit) as error:
-        main(["unused.mp4", flag, value])
+        main(["unused.mp4", "--slots", "unused.json", flag, value])
     assert error.value.code == 2
+
+
+@pytest.mark.parametrize("names, task, expected", [
+    ({0: "person", 2: "car", 3: "motorcycle", 5: "bus", 7: "truck"}, "detect", [2, 3, 5, 7]),
+    ({0: "plane", 4: "tennis court", 9: "large vehicle", 10: "small vehicle"}, "obb", [9, 10]),
+    ({4: "small-vehicle", 5: "large-vehicle"}, "obb", [4, 5]),
+])
+def test_detector_class_mapping(monkeypatch, names, task, expected):
+    # Exercise initialization on a stand-in; no Detector or real YOLO model is instantiated.
+    fake_model = SimpleNamespace(names=names, task=task)
+    monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(YOLO=lambda model: fake_model))
+    receiver = SimpleNamespace()
+    Detector.__init__(receiver, "fake.pt", None, .25, "cpu")
+    assert receiver.classes == expected
+    assert receiver.imgsz is None
+    Detector.__init__(receiver, "fake.pt", [next(iter(names))], .25, "cpu", 640)
+    assert receiver.classes == [next(iter(names))] and receiver.imgsz == 640
+
+
+def test_detector_rejects_unknown_classes(monkeypatch):
+    monkeypatch.setitem(sys.modules, "ultralytics", SimpleNamespace(
+        YOLO=lambda model: SimpleNamespace(names={0: "object"}, task="detect")))
+    with pytest.raises(ValueError, match="--classes"):
+        Detector.__init__(SimpleNamespace(), "fake.pt", None, .25, "cpu")
+
+
+@pytest.mark.parametrize("oriented", [False, True])
+@pytest.mark.parametrize("coordinates", [[], [[10., 20., 30., 40.]]])
+def test_detector_box_results(oriented, coordinates):
+    array = np.array(coordinates, dtype=float).reshape(-1, 4)
+    tensor = SimpleNamespace(cpu=lambda: SimpleNamespace(numpy=lambda: array))
+    detections = SimpleNamespace(xyxy=tensor)
+    calls = []
+    def predict(frame, **kwargs):
+        calls.append(kwargs)
+        return [SimpleNamespace(obb=detections if oriented else None,
+                                boxes=None if oriented else detections)]
+    receiver = SimpleNamespace(model=SimpleNamespace(predict=predict), classes=[9, 10],
+                               conf=.25, device="cpu", imgsz=1280)
+    result = Detector.boxes(receiver, np.zeros((100, 200, 3), dtype=np.uint8))
+    np.testing.assert_array_equal(result, array)
+    assert result.shape == (len(coordinates), 4)
+    assert calls == [dict(classes=[9, 10], conf=.25, device="cpu", imgsz=1280, verbose=False)]
+
+
+def test_cli_requires_explicit_slot_map():
+    from parking_vision.main import main
+    with pytest.raises(SystemExit) as error:
+        main(["any.mp4"])
+    assert error.value.code == 2
+
+
+def test_cli_saves_still_image_and_checks_coordinates(tmp_path, slots, monkeypatch, capsys):
+    from parking_vision import main as cli
+    source = tmp_path / "photo.png"
+    assert cv2.imwrite(str(source), np.zeros((200, 320, 3), dtype=np.uint8))
+    monkeypatch.setattr(cli, "Detector", lambda *args: SimpleNamespace(
+        boxes=lambda frame: np.array([[140.,120.,180.,160.]])))
+    output = tmp_path / "nested" / "overlay.png"
+    args = [str(source), "--slots", str(tmp_path / "slots.json"), "--width", "320", "--save", str(output)]
+    assert cli.main(args) == 0
+    state = json.loads(capsys.readouterr().out)
+    assert state["total"] == 3 and state["occupied"] == [1]
+    assert cv2.imread(str(output)).shape == (200, 320, 3)
+    with pytest.raises(ValueError, match="Slot coordinates exceed"):
+        cli.main([str(source), "--slots", str(tmp_path / "slots.json"), "--width", "100"])
+
+
+@pytest.mark.parametrize("shape, expected_size", [((100, 200, 3), 1280), ((200, 100, 3), 1920)])
+def test_detector_auto_resolution(shape, expected_size):
+    sizes = []
+    tensor = SimpleNamespace(cpu=lambda: SimpleNamespace(numpy=lambda: np.empty((0, 4))))
+    def predict(frame, **kwargs):
+        sizes.append(kwargs["imgsz"])
+        return [SimpleNamespace(obb=SimpleNamespace(xyxy=tensor), boxes=None)]
+    receiver = SimpleNamespace(model=SimpleNamespace(predict=predict), classes=[9, 10],
+                               conf=.25, device="cpu", imgsz=None)
+    Detector.boxes(receiver, np.zeros(shape, dtype=np.uint8))
+    assert sizes == [expected_size]
+
+
+def test_example_maps_match_sources_and_cover_known_bays():
+    import hashlib
+
+    root = Path(__file__).resolve().parents[1]
+    manifest = json.loads((root / "config/examples/manifest.json").read_text())
+    expected_totals = {"nigh1": 191, "nigh2": 209, "park1": 54, "park2": 37, "sparse": 155}
+    for item in manifest:
+        source = root / item["source"]
+        assert hashlib.sha256(source.read_bytes()).hexdigest() == item["sha256"]
+        slots = load_slots(root / item["slots"])
+        assert len(slots) == expected_totals[item["key"]] == len(item["expected_occupied"])
+        height, width = item["shape"]
+        for slot in slots:
+            assert (slot.polygon >= 0).all()
+            assert (slot.polygon[:, 0] < (width, height)).all()
+        # Conservation still holds for hundreds of slots, independent of model predictions.
+        state = LotState.from_flags(slots, [flag is True for flag in item["expected_occupied"]], 0)
+        assert state.empty_count + state.occupied_count == len(slots)
