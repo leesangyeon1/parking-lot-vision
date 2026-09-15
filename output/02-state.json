@@ -1,0 +1,117 @@
+{
+  "frame": 0,
+  "total": 8,
+  "empty_count": 8,
+  "occupied_count": 0,
+  "empty": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "occupied": [],
+  "empty_locations": {
+    "0": [
+      122,
+      232
+    ],
+    "1": [
+      168,
+      232
+    ],
+    "2": [
+      212,
+      232
+    ],
+    "3": [
+      252,
+      232
+    ],
+    "4": [
+      331,
+      491
+    ],
+    "5": [
+      368,
+      491
+    ],
+    "6": [
+      404,
+      491
+    ],
+    "7": [
+      440,
+      491
+    ]
+  },
+  "slots": [
+    {
+      "index": 0,
+      "occupied": false,
+      "centroid": [
+        122,
+        232
+      ]
+    },
+    {
+      "index": 1,
+      "occupied": false,
+      "centroid": [
+        168,
+        232
+      ]
+    },
+    {
+      "index": 2,
+      "occupied": false,
+      "centroid": [
+        212,
+        232
+      ]
+    },
+    {
+      "index": 3,
+      "occupied": false,
+      "centroid": [
+        252,
+        232
+      ]
+    },
+    {
+      "index": 4,
+      "occupied": false,
+      "centroid": [
+        331,
+        491
+      ]
+    },
+    {
+      "index": 5,
+      "occupied": false,
+      "centroid": [
+        368,
+        491
+      ]
+    },
+    {
+      "index": 6,
+      "occupied": false,
+      "centroid": [
+        404,
+        491
+      ]
+    },
+    {
+      "index": 7,
+      "occupied": false,
+      "centroid": [
+        440,
+        491
+      ]
+    }
+  ]
+}

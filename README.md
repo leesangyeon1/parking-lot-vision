@@ -29,6 +29,7 @@ slots.json (polygons, index = list order) ────────────�
 Occupancy rule (same as Ultralytics `ParkingManagement`): slot is **occupied** if any
 detected vehicle's bounding-box center lies inside the slot polygon. Otherwise **empty**.
 A per-slot majority vote over the last `--vote` frames removes flicker.
+During startup, voting uses the frames available so far; ties count as empty.
 
 ## 2. Reference research → what we take
 
@@ -45,7 +46,7 @@ A per-slot majority vote over the last `--vote` frames removes flicker.
 ### Step 0. Environment
 ```bash
 python -m venv .venv && source .venv/bin/activate
-pip install ultralytics opencv-python numpy
+pip install -r requirements.txt
 brew install python-tk        # macOS, needed by the picker (apt: python3-tk)
 ```
 
@@ -62,6 +63,8 @@ python -m parking_vision.tools.pick_slots          # opens Ultralytics ParkingPt
 Upload `data/ref.jpg`, click 4 corners per slot, **Save** → `bounding_boxes.json` in CWD.
 Move it to `config/slots.json`. Slot `i` = i-th polygon in the file. Re-order the list if
 you want a specific numbering.
+The included `config/slots.json` contains example coordinates; replace them with your
+own annotations before monitoring a real lot. Polygons may contain three or more points.
 
 `config/slots.json`
 ```json
@@ -77,6 +80,11 @@ python -m parking_vision.main data/lot.mp4 --slots config/slots.json \
     --model yolo11s.pt --width 1280 --vote 5 --show --json-out out/state.jsonl --save out/lot.mp4
 ```
 Source may be a file path, RTSP URL, or webcam index (`0`).
+Frame indices start at zero; `--every 3` reports frames 0, 3, 6, and so on.
+Output directories are created automatically. JSONL files are appended to; MP4 files
+are overwritten. Saved video uses the source FPS (25 if unavailable), so frame
+skipping produces a shorter video. Model weights download on first use if absent;
+use a local weights path for offline inference.
 
 ### Step 4. Consume metrics
 One JSON object per processed frame on stdout (and `--json-out`):
@@ -94,6 +102,8 @@ One JSON object per processed frame on stdout (and `--json-out`):
 ```
 
 ### Step 5 (optional, Phase 2). Fine-tune on PKLot
+This section describes future work. `--mode`, `--rule`, and `--iou-thresh` are not
+implemented in v1.
 Only if the COCO detector misses cars from a high/oblique camera.
 ```bash
 # download PKLot (YOLOv8 format) from Roboflow into data/pklot
@@ -173,7 +183,10 @@ pytest tests/
 ```
 `test_occupancy.py` builds 3 square slots, feeds synthetic boxes, asserts:
 `assign` marks exactly the hit slot; `VoteBuffer(3)` flips only after 2/3 agreeing
-frames; `LotState` counts and index lists are consistent (`empty + occupied == range(N)`).
+frames; `LotState` counts and index lists are consistent (`sorted(empty + occupied) == list(range(N))`).
+Tests also check polygon ordering, overlay colors, frame extraction, frame skipping,
+JSONL append, MP4 decoding, and cleanup. They use synthetic video and a fake detector;
+no model is instantiated or downloaded, and network connections are blocked.
 
 ## 7. Out of scope (v1)
 

@@ -1,0 +1,125 @@
+{
+  "model": "yolo11s.pt",
+  "classes": [
+    2,
+    3,
+    5,
+    7
+  ],
+  "conf": 0.25,
+  "width": 1280,
+  "images": [
+    {
+      "image": 1,
+      "source": "Example photos/example photos/\u1109\u1173\u110f\u1173\u1105\u1175\u11ab\u1109\u1163\u11ba 2026-09-08 \u110b\u1169\u1112\u116e 2.31.02.png",
+      "original_shape": [
+        1132,
+        1894,
+        3
+      ],
+      "resized_shape": [
+        765,
+        1280,
+        3
+      ],
+      "vehicle_detections": 0,
+      "boxes": []
+    },
+    {
+      "image": 2,
+      "source": "Example photos/example photos/\u1109\u1173\u110f\u1173\u1105\u1175\u11ab\u1109\u1163\u11ba 2026-09-14 \u110b\u1169\u1112\u116e 11.06.15.png",
+      "original_shape": [
+        1242,
+        1818,
+        3
+      ],
+      "resized_shape": [
+        874,
+        1280,
+        3
+      ],
+      "vehicle_detections": 0,
+      "boxes": []
+    },
+    {
+      "image": 3,
+      "source": "Example photos/example photos/\u1109\u1173\u110f\u1173\u1105\u1175\u11ab\u1109\u1163\u11ba 2026-09-14 \u110b\u1169\u1112\u116e 11.06.50.png",
+      "original_shape": [
+        1156,
+        1032,
+        3
+      ],
+      "resized_shape": [
+        1434,
+        1280,
+        3
+      ],
+      "vehicle_detections": 0,
+      "boxes": []
+    },
+    {
+      "image": 4,
+      "source": "Example photos/example photos/\u1109\u1173\u110f\u1173\u1105\u1175\u11ab\u1109\u1163\u11ba 2026-09-14 \u110b\u1169\u1112\u116e 11.07.23.png",
+      "original_shape": [
+        1180,
+        1690,
+        3
+      ],
+      "resized_shape": [
+        894,
+        1280,
+        3
+      ],
+      "vehicle_detections": 0,
+      "boxes": []
+    },
+    {
+      "image": 5,
+      "source": "Example photos/example photos/\u1109\u1173\u110f\u1173\u1105\u1175\u11ab\u1109\u1163\u11ba 2026-09-14 \u110b\u1169\u1112\u116e 11.07.45.png",
+      "original_shape": [
+        1230,
+        1842,
+        3
+      ],
+      "resized_shape": [
+        855,
+        1280,
+        3
+      ],
+      "vehicle_detections": 0,
+      "boxes": []
+    },
+    {
+      "image": 6,
+      "source": "Example photos/example photos/\u1109\u1173\u110f\u1173\u1105\u1175\u11ab\u1109\u1163\u11ba 2026-09-14 \u110b\u1169\u1112\u116e 11.08.09.png",
+      "original_shape": [
+        1068,
+        538,
+        3
+      ],
+      "resized_shape": [
+        2541,
+        1280,
+        3
+      ],
+      "vehicle_detections": 0,
+      "boxes": []
+    },
+    {
+      "image": 7,
+      "source": "Example photos/example photos/\u1109\u1173\u110f\u1173\u1105\u1175\u11ab\u1109\u1163\u11ba 2026-09-14 \u110b\u1169\u1112\u116e 11.08.27.png",
+      "original_shape": [
+        902,
+        1456,
+        3
+      ],
+      "resized_shape": [
+        793,
+        1280,
+        3
+      ],
+      "vehicle_detections": 0,
+      "boxes": []
+    }
+  ]
+}
