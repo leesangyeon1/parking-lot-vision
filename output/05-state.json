@@ -1,0 +1,143 @@
+{
+  "frame": 0,
+  "total": 10,
+  "empty_count": 10,
+  "occupied_count": 0,
+  "empty": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9
+  ],
+  "occupied": [],
+  "empty_locations": {
+    "0": [
+      272,
+      209
+    ],
+    "1": [
+      309,
+      209
+    ],
+    "2": [
+      345,
+      209
+    ],
+    "3": [
+      380,
+      209
+    ],
+    "4": [
+      415,
+      209
+    ],
+    "5": [
+      450,
+      209
+    ],
+    "6": [
+      274,
+      462
+    ],
+    "7": [
+      310,
+      462
+    ],
+    "8": [
+      345,
+      462
+    ],
+    "9": [
+      380,
+      462
+    ]
+  },
+  "slots": [
+    {
+      "index": 0,
+      "occupied": false,
+      "centroid": [
+        272,
+        209
+      ]
+    },
+    {
+      "index": 1,
+      "occupied": false,
+      "centroid": [
+        309,
+        209
+      ]
+    },
+    {
+      "index": 2,
+      "occupied": false,
+      "centroid": [
+        345,
+        209
+      ]
+    },
+    {
+      "index": 3,
+      "occupied": false,
+      "centroid": [
+        380,
+        209
+      ]
+    },
+    {
+      "index": 4,
+      "occupied": false,
+      "centroid": [
+        415,
+        209
+      ]
+    },
+    {
+      "index": 5,
+      "occupied": false,
+      "centroid": [
+        450,
+        209
+      ]
+    },
+    {
+      "index": 6,
+      "occupied": false,
+      "centroid": [
+        274,
+        462
+      ]
+    },
+    {
+      "index": 7,
+      "occupied": false,
+      "centroid": [
+        310,
+        462
+      ]
+    },
+    {
+      "index": 8,
+      "occupied": false,
+      "centroid": [
+        345,
+        462
+      ]
+    },
+    {
+      "index": 9,
+      "occupied": false,
+      "centroid": [
+        380,
+        462
+      ]
+    }
+  ]
+}

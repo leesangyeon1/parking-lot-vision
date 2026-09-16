@@ -1,0 +1,351 @@
+{
+  "frame": 0,
+  "total": 37,
+  "empty_count": 1,
+  "occupied_count": 36,
+  "empty": [
+    6
+  ],
+  "occupied": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36
+  ],
+  "empty_locations": {
+    "6": [
+      578,
+      52
+    ]
+  },
+  "slots": [
+    {
+      "index": 0,
+      "occupied": true,
+      "centroid": [
+        262,
+        52
+      ]
+    },
+    {
+      "index": 1,
+      "occupied": true,
+      "centroid": [
+        315,
+        52
+      ]
+    },
+    {
+      "index": 2,
+      "occupied": true,
+      "centroid": [
+        367,
+        52
+      ]
+    },
+    {
+      "index": 3,
+      "occupied": true,
+      "centroid": [
+        419,
+        52
+      ]
+    },
+    {
+      "index": 4,
+      "occupied": true,
+      "centroid": [
+        471,
+        52
+      ]
+    },
+    {
+      "index": 5,
+      "occupied": true,
+      "centroid": [
+        523,
+        52
+      ]
+    },
+    {
+      "index": 6,
+      "occupied": false,
+      "centroid": [
+        578,
+        52
+      ]
+    },
+    {
+      "index": 7,
+      "occupied": true,
+      "centroid": [
+        703,
+        54
+      ]
+    },
+    {
+      "index": 8,
+      "occupied": true,
+      "centroid": [
+        758,
+        54
+      ]
+    },
+    {
+      "index": 9,
+      "occupied": true,
+      "centroid": [
+        813,
+        54
+      ]
+    },
+    {
+      "index": 10,
+      "occupied": true,
+      "centroid": [
+        868,
+        54
+      ]
+    },
+    {
+      "index": 11,
+      "occupied": true,
+      "centroid": [
+        922,
+        54
+      ]
+    },
+    {
+      "index": 12,
+      "occupied": true,
+      "centroid": [
+        977,
+        54
+      ]
+    },
+    {
+      "index": 13,
+      "occupied": true,
+      "centroid": [
+        1032,
+        54
+      ]
+    },
+    {
+      "index": 14,
+      "occupied": true,
+      "centroid": [
+        1086,
+        54
+      ]
+    },
+    {
+      "index": 15,
+      "occupied": true,
+      "centroid": [
+        1209,
+        230
+      ]
+    },
+    {
+      "index": 16,
+      "occupied": true,
+      "centroid": [
+        1209,
+        282
+      ]
+    },
+    {
+      "index": 17,
+      "occupied": true,
+      "centroid": [
+        1209,
+        333
+      ]
+    },
+    {
+      "index": 18,
+      "occupied": true,
+      "centroid": [
+        1209,
+        384
+      ]
+    },
+    {
+      "index": 19,
+      "occupied": true,
+      "centroid": [
+        1209,
+        436
+      ]
+    },
+    {
+      "index": 20,
+      "occupied": true,
+      "centroid": [
+        1209,
+        488
+      ]
+    },
+    {
+      "index": 21,
+      "occupied": true,
+      "centroid": [
+        1209,
+        541
+      ]
+    },
+    {
+      "index": 22,
+      "occupied": true,
+      "centroid": [
+        1209,
+        593
+      ]
+    },
+    {
+      "index": 23,
+      "occupied": true,
+      "centroid": [
+        1209,
+        646
+      ]
+    },
+    {
+      "index": 24,
+      "occupied": true,
+      "centroid": [
+        1209,
+        699
+      ]
+    },
+    {
+      "index": 25,
+      "occupied": true,
+      "centroid": [
+        1209,
+        752
+      ]
+    },
+    {
+      "index": 26,
+      "occupied": true,
+      "centroid": [
+        65,
+        220
+      ]
+    },
+    {
+      "index": 27,
+      "occupied": true,
+      "centroid": [
+        61,
+        279
+      ]
+    },
+    {
+      "index": 28,
+      "occupied": true,
+      "centroid": [
+        58,
+        334
+      ]
+    },
+    {
+      "index": 29,
+      "occupied": true,
+      "centroid": [
+        56,
+        390
+      ]
+    },
+    {
+      "index": 30,
+      "occupied": true,
+      "centroid": [
+        53,
+        447
+      ]
+    },
+    {
+      "index": 31,
+      "occupied": true,
+      "centroid": [
+        50,
+        503
+      ]
+    },
+    {
+      "index": 32,
+      "occupied": true,
+      "centroid": [
+        47,
+        559
+      ]
+    },
+    {
+      "index": 33,
+      "occupied": true,
+      "centroid": [
+        44,
+        615
+      ]
+    },
+    {
+      "index": 34,
+      "occupied": true,
+      "centroid": [
+        41,
+        671
+      ]
+    },
+    {
+      "index": 35,
+      "occupied": true,
+      "centroid": [
+        38,
+        726
+      ]
+    },
+    {
+      "index": 36,
+      "occupied": true,
+      "centroid": [
+        35,
+        772
+      ]
+    }
+  ]
+}

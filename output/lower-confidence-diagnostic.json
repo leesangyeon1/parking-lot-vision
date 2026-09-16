@@ -1,0 +1,44 @@
+[
+  {
+    "image": 1,
+    "confidence": 0.1,
+    "detected_vehicles": 0,
+    "boxes": []
+  },
+  {
+    "image": 2,
+    "confidence": 0.1,
+    "detected_vehicles": 0,
+    "boxes": []
+  },
+  {
+    "image": 3,
+    "confidence": 0.1,
+    "detected_vehicles": 0,
+    "boxes": []
+  },
+  {
+    "image": 4,
+    "confidence": 0.1,
+    "detected_vehicles": 0,
+    "boxes": []
+  },
+  {
+    "image": 5,
+    "confidence": 0.1,
+    "detected_vehicles": 0,
+    "boxes": []
+  },
+  {
+    "image": 6,
+    "confidence": 0.1,
+    "detected_vehicles": 0,
+    "boxes": []
+  },
+  {
+    "image": 7,
+    "confidence": 0.1,
+    "detected_vehicles": 0,
+    "boxes": []
+  }
+]
